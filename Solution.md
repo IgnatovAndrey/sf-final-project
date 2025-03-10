@@ -1,6 +1,6 @@
-Задание 1
-**Расчет rolling retention с разбивкой по когортам**
 ```sql
+Задание 1
+--Расчет rolling retention с разбивкой по когортам--
 with a as (
 	select user_id, 
 		   to_char(date_joined, 'YYYY-MM') as dat,
@@ -26,4 +26,23 @@ from a c
 	join b
 		on (c.dat = b.dat)
 	group by c.dat, day0
+```sql 
+
+```sql
+Задание 2
+--Расчет метрик относительно баланса пользователя--
+with a as (
+	select user_id, 
+	   	   sum(case when type_id in (1, 23, 24, 25, 26, 27, 28, 30) then value else 0 end) as debiting,
+	       sum(case when type_id in (1, 23, 24, 25, 26, 27, 28, 30) then 0 else value end) as accrual,
+	       sum(case when type_id in (1, 23, 24, 25, 26, 27, 28, 30) then -value else value end) as avg_balance
+    from transaction t 
+	group by user_id
+)
+select round(avg(debiting), 2) as avg_debiting, --Среднее списание-- 
+       round(avg(accrual), 2) as avg_accrual, --Среднее начисление--
+       round(avg(avg_balance), 2) as avg_balance, --Средний баланс всех пользователей-- 
+       percentile_cont(0.5) within group (order by avg_balance) as median_balance --Медианный баланс--
+from a
+```sql
 
